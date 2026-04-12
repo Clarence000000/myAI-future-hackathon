@@ -1,0 +1,38 @@
+{
+  "name": "module1",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "build:extension": "node chrome-extension/build.mjs",
+    "watch:extension": "node chrome-extension/build.mjs --watch",
+    "dev:all": "concurrently \"next dev\" \"node chrome-extension/build.mjs --watch\""
+  },
+  "dependencies": {
+    "@google/genai": "^1.48.0",
+    "firebase": "^12.11.0",
+    "firebase-admin": "^10.3.0",
+    "next": "^16.2.3",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "reactflow": "^11.11.4",
+    "recharts": "^3.8.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.2.2",
+    "@tailwindcss/postcss": "^4",
+    "@types/chrome": "^0.1.39",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "concurrently": "^9.2.1",
+    "esbuild": "^0.28.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.2",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
