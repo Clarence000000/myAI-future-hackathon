@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
-import { analyzeManualInput } from "./actions";
+import { analyzeManualInput } from "@/app/dashboard/actions";
 import { db } from "@/lib/firebase/clientApp";
 import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
 import { RadialBarChart, RadialBar, PolarAngleAxis, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";

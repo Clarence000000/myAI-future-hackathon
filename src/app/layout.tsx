@@ -1,21 +1,14 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/components/AuthProvider";
+// 1. Import your newly created AuthProvider
+import { AuthProvider } from "@/components/AuthProvider"; 
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "ScamShield AI",
-  description: "Real-time scam detection powered by FinTrust AI",
+  title: "FinTrust AI",
+  description: "Enterprise Biometric Security",
 };
 
 export default function RootLayout({
@@ -24,12 +17,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
-    >
-      <body className="h-full flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+    // Keep the suppressHydrationWarning to stop those pesky browser extension errors!
+    <html lang="en" suppressHydrationWarning>
+      <body 
+        className={`${inter.className} bg-[#020617] text-slate-200 antialiased`} 
+        suppressHydrationWarning
+      >
+        {/* 2. Wrap the entire app (children) inside the AuthProvider */}
         <AuthProvider>
           {children}
         </AuthProvider>

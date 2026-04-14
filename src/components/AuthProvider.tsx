@@ -1,62 +1,35 @@
 "use client";
-
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { onAuthStateChanged, User, signOut as firebaseSignOut } from "firebase/auth";
+import { createContext, useContext, useEffect, useState } from "react";
+import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase/clientApp";
-import { useRouter, usePathname } from "next/navigation";
 
-interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  signOut: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  loading: true,
-  signOut: async () => {},
+// 1. Create the context
+const AuthContext = createContext<{ user: User | null; loading: boolean }>({ 
+  user: null, 
+  loading: true 
 });
 
-export const useAuth = () => useContext(AuthContext);
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    // 2. Listen to Firebase Auth state changes globally
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
-      
-      // If we have a user, get the token and broadcast it to the extension securely
-      if (currentUser) {
-        try {
-          const token = await currentUser.getIdToken();
-          window.postMessage({ type: 'SCAMSHIELD_AUTH', token }, '*');
-        } catch (err) {
-          console.error("Failed to get token for extension", err);
-        }
-      }
-
-      // Basic route protection
-      if (!currentUser && pathname?.startsWith("/dashboard")) {
-        router.push("/login");
-      }
     });
 
+    // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [pathname, router]);
-
-  const signOut = async () => {
-    await firebaseSignOut(auth);
-    router.push("/login");
-  };
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, signOut }}>
-      {children}
+    <AuthContext.Provider value={{ user, loading }}>
+      {!loading && children} {/* Optional: prevents rendering until auth is checked */}
     </AuthContext.Provider>
   );
-}
+};
+
+// 3. Export the hook you are using in your pages
+export const useAuth = () => useContext(AuthContext);
