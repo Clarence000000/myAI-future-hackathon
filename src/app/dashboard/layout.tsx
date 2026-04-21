@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, Lock, Share2, User } from 'lucide-react';
+import { Shield, Lock, Share2, User, CreditCard } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -10,6 +10,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navItems = [
     { name: 'ScamShield', href: '/dashboard/scam-shield', icon: <Shield size={18}/> },
     { name: 'IdentityGuard', href: '/dashboard/identity-guard', icon: <Lock size={18}/> },
+    { name: 'Transaction Fraud', href: '/dashboard/transaction-fraud', icon: <CreditCard size={18}/> },
     { name: 'FraudGraph', href: '/dashboard/fraud-graph', icon: <Share2 size={18}/> },
   ];
 
