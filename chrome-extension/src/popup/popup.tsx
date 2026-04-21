@@ -10,6 +10,9 @@ import {
 // Types
 // ============================================================
 
+declare const __API_BASE_URL__: string;
+
+
 interface UserStats {
   totalScans: number;
   safeCount: number;
@@ -133,7 +136,7 @@ function PopupApp() {
   }, []);
 
   const handleSignIn = useCallback(async () => {
-    chrome.tabs.create({ url: 'http://localhost:3000/login' });
+    chrome.tabs.create({ url: `${__API_BASE_URL__}/login` });
     try { window.close(); } catch {}
   }, []);
 

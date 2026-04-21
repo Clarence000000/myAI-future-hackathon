@@ -108,7 +108,8 @@ const sharedOptions = {
   sourcemap: isWatch ? 'inline' : false,
   logLevel: 'info',
   define: {
-    '__API_BASE_URL__': '"http://localhost:3000"',
+    // Allows overriding the API URL at build time: `API_URL=http://localhost:3000 node chrome-extension/build.mjs`
+    '__API_BASE_URL__': `"${process.env.API_URL || 'https://myai-nextjs-802600538942.us-central1.run.app'}"`,
   },
 };
 

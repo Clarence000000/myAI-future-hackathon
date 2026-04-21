@@ -201,10 +201,14 @@ chrome.runtime.onMessage.addListener((message: AnalyzeMessage) => {
 });
 
 // ---- Bridge for Web App Auth ----
-// Listens for identity tokens sent from the dashboard (localhost:3000)
+// Listens for identity tokens sent from the dashboard
 window.addEventListener('message', (event) => {
-    // Only accept from trusted local origin for hackathon
-    if (event.origin !== 'http://localhost:3000' && event.origin !== 'http://127.0.0.1:3000') return;
+    const allowedOrigins = [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'https://myai-nextjs-802600538942.us-central1.run.app'
+    ];
+    if (!allowedOrigins.includes(event.origin)) return;
 
     if (event.data && event.data.type === 'SCAMSHIELD_AUTH') {
         chrome.runtime.sendMessage({
