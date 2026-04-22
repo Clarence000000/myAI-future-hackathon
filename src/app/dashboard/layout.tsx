@@ -13,7 +13,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navItems = [
     { name: 'ScamShield', href: '/dashboard/scam-shield', icon: <Shield size={18}/> },
     { name: 'IdentityGuard', href: '/dashboard/identity-guard', icon: <Lock size={18}/> },
-    { name: 'FraudGraph', href: '/dashboard/fraud-graph', icon: <Share2 size={18}/> },
+    { name: 'FraudGraph', href: '/dashboard/transaction-fraud', icon: <Share2 size={18}/> },
   ];
 
   return (
