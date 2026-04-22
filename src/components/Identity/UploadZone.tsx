@@ -9,7 +9,7 @@ export default function UploadZone({ title, onUpload }: { title: string, onUploa
   return (
     <div 
       onClick={() => fileInputRef.current?.click()} 
-      className="group relative h-full border-2 border-dashed border-slate-800 rounded-2xl p-8 flex flex-col items-center justify-center bg-[#1e293b]/20 hover:bg-blue-600/5 hover:border-blue-500/50 transition-all cursor-pointer backdrop-blur-sm"
+      className="group relative min-h-[280px] border-2 border-dashed border-slate-800 rounded-2xl p-8 flex flex-col items-center justify-center bg-[#1e293b]/20 hover:bg-blue-600/5 hover:border-blue-500/50 transition-all cursor-pointer backdrop-blur-sm"
     >
       {/* 2. Visual "Icon Glow" effect */}
       <div className="bg-blue-500/10 p-4 rounded-2xl mb-4 group-hover:scale-110 group-hover:bg-blue-500/20 transition-all duration-300">
@@ -38,6 +38,7 @@ export default function UploadZone({ title, onUpload }: { title: string, onUploa
             console.log("File selected:", file.name);
             onUpload(file);
           }
+          e.currentTarget.value = "";
         }} 
       />
     </div>

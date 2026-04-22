@@ -1,126 +1,219 @@
 "use client";
 
-import { useState } from "react";
-import { auth } from "@/lib/firebase/clientApp";
-import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState, type FormEvent } from "react";
+import {
+  GoogleAuthProvider,
+  sendEmailVerification,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+} from "firebase/auth";
+import { ArrowRight, Lock, Mail } from "lucide-react";
+import { auth } from "@/lib/firebase/clientApp";
+import AuthShowcase from "@/components/Auth/AuthShowcase";
+import { AuthField, getErrorMessage, GoogleIcon } from "@/components/Auth/AuthUi";
 
 export default function LoginPage() {
-  const [isSignUp, setIsSignUp] = useState(false);
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const router = useRouter();
+  const [notice, setNotice] = useState("");
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [resending, setResending] = useState(false);
 
   const handleGoogleSignIn = async () => {
     try {
+      setSubmitting(true);
       setError("");
+      setNotice("");
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "Failed to sign in with Google.");
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to sign in with Google."));
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const handleEmailAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleEmailSignIn = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
     try {
+      setSubmitting(true);
       setError("");
-      if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password);
-      } else {
-        await signInWithEmailAndPassword(auth, email, password);
+      setNotice("");
+
+      const credential = await signInWithEmailAndPassword(auth, email, password);
+
+      if (!credential.user.emailVerified) {
+        await sendEmailVerification(credential.user, {
+          url: `${window.location.origin}/login`,
+          handleCodeInApp: false,
+        });
+        await signOut(auth);
+        setPendingVerificationEmail(email);
+        setNotice(
+          "Your email is not verified yet. We sent a fresh verification link to your inbox."
+        );
+        setPassword("");
+        return;
       }
+
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "Authentication failed.");
+    } catch (err) {
+      setError(getErrorMessage(err, "Authentication failed."));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!pendingVerificationEmail || !password) {
+      setError("Enter your email and password first so we can resend the verification link.");
+      return;
+    }
+
+    try {
+      setResending(true);
+      setError("");
+      setNotice("");
+      const credential = await signInWithEmailAndPassword(
+        auth,
+        pendingVerificationEmail,
+        password
+      );
+      await sendEmailVerification(credential.user, {
+        url: `${window.location.origin}/login`,
+        handleCodeInApp: false,
+      });
+      await signOut(auth);
+      setNotice("A new verification link has been sent. Please check your inbox.");
+    } catch (err) {
+      setError(getErrorMessage(err, "We could not resend the verification email."));
+    } finally {
+      setResending(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
-      <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden">
-        <div className="p-8">
-          <div className="flex flex-col items-center mb-8">
-            <div className="w-12 h-12 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-2xl mb-4 shadow-lg text-white">
-              🛡️
+    <div className="min-h-screen bg-[#020617] text-white">
+      <div className="grid min-h-screen lg:grid-cols-[1.08fr_0.92fr]">
+        <AuthShowcase />
+
+        <section className="flex items-center justify-center px-6 py-12 sm:px-10 lg:px-16">
+          <div className="w-full max-w-xl">
+            <div className="mb-10 lg:hidden">
+              <p className="text-[11px] font-black uppercase tracking-[0.36em] text-blue-300/70">
+                Trusted Identity Intelligence
+              </p>
+              <h1 className="mt-3 text-4xl font-black tracking-tight text-white">
+                <span className="text-blue-400">FinTrust</span> AI
+              </h1>
             </div>
-            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
-              ScamShield AI
-            </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-              Sign in to access your FinTrust dashboard
-            </p>
+
+            <div className="rounded-[32px] border border-slate-800 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] p-8 shadow-[0_24px_80px_rgba(2,6,23,0.55)] sm:p-10">
+              <p className="text-[11px] font-black uppercase tracking-[0.34em] text-slate-500">
+                Access Portal
+              </p>
+              <h2 className="mt-3 text-4xl font-black tracking-tight text-white">
+                Welcome Back.
+              </h2>
+              <p className="mt-3 max-w-lg text-lg leading-8 text-slate-400">
+                Log in to access your FinTrust AI dashboard and identity protection tools.
+              </p>
+
+              {error && (
+                <div className="mt-8 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-4 text-sm leading-6 text-rose-200">
+                  {error}
+                </div>
+              )}
+
+              {notice && (
+                <div className="mt-8 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-4 text-sm leading-6 text-emerald-100">
+                  {notice}
+                </div>
+              )}
+
+              <button
+                onClick={handleGoogleSignIn}
+                disabled={submitting}
+                className="mt-8 flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-4 text-base font-bold text-white transition hover:border-slate-600 hover:bg-slate-800/70 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <GoogleIcon />
+                Sign in with Google
+              </button>
+
+              <div className="relative my-8 flex items-center">
+                <div className="h-px flex-1 bg-slate-800" />
+                <span className="px-4 text-xs font-black uppercase tracking-[0.32em] text-slate-500">
+                  Or
+                </span>
+                <div className="h-px flex-1 bg-slate-800" />
+              </div>
+
+              <form onSubmit={handleEmailSignIn} className="space-y-5">
+                <AuthField
+                  label="Email Address"
+                  icon={<Mail size={18} />}
+                  type="email"
+                  value={email}
+                  onChange={(value) => {
+                    setEmail(value);
+                    setPendingVerificationEmail(value);
+                  }}
+                  placeholder="admin@fintrust.ai"
+                />
+
+                <AuthField
+                  label="Master Password"
+                  icon={<Lock size={18} />}
+                  type="password"
+                  value={password}
+                  onChange={setPassword}
+                  placeholder="••••••••••"
+                />
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[linear-gradient(135deg,#2563eb,#2563eb_35%,#3b82f6_100%)] px-5 py-4 text-lg font-black text-white shadow-[0_18px_45px_rgba(37,99,235,0.35)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {submitting ? "Processing..." : "Secure Login"}
+                  <ArrowRight size={18} />
+                </button>
+              </form>
+
+              <div className="mt-8 flex flex-col gap-4 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-3 sm:max-w-[260px]">
+                  <p>
+                    Need a FinTrust account?
+                  </p>
+                  <Link
+                    href="/signup"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-4 py-3 font-bold text-cyan-200 transition hover:bg-cyan-400/20 hover:text-white"
+                  >
+                    Sign Up
+                    <ArrowRight size={16} />
+                  </Link>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={resending || !pendingVerificationEmail}
+                  className="text-left font-bold text-cyan-300 transition hover:text-cyan-200 disabled:cursor-not-allowed disabled:text-slate-600"
+                >
+                  {resending ? "Sending verification..." : "Resend verification link"}
+                </button>
+              </div>
+            </div>
           </div>
-
-          {error && (
-            <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-3 rounded-lg text-sm mb-6 text-center border border-red-200 dark:border-red-800">
-              {error}
-            </div>
-          )}
-
-          <button
-            onClick={handleGoogleSignIn}
-            className="w-full flex items-center justify-center gap-3 bg-white dark:bg-slate-700 text-slate-700 dark:text-white border border-slate-300 dark:border-slate-600 px-4 py-3 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors mb-6 shadow-sm"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-            </svg>
-            Continue with Google
-          </button>
-
-          <div className="relative flex py-2 items-center mb-6">
-            <div className="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
-            <span className="flex-shrink-0 mx-4 text-slate-400 dark:text-slate-500 text-sm">or</span>
-            <div className="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
-          </div>
-
-          <form onSubmit={handleEmailAuth} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email address</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all shadow-sm"
-                placeholder="you@example.com"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all shadow-sm"
-                placeholder="••••••••"
-              />
-            </div>
-            
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md shadow-blue-500/20 py-3 px-4 rounded-xl font-medium transition-all transform active:scale-[0.98]"
-            >
-              {isSignUp ? "Create Account" : "Sign In"}
-            </button>
-          </form>
-
-          <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
-            {isSignUp ? "Already have an account?" : "Don't have an account?"}
-            <button
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="ml-2 font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              {isSignUp ? "Sign In" : "Sign Up"}
-            </button>
-          </p>
-        </div>
+        </section>
       </div>
     </div>
   );

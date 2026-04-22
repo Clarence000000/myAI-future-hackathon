@@ -1,21 +1,44 @@
 "use client";
 import { useState, useEffect, useCallback } from 'react';
-import { ShieldCheck, UserCheck, Activity, Globe, Lock, AlertTriangle, History, Fingerprint, ExternalLink, RefreshCcw } from 'lucide-react';
+import { Activity, Lock, AlertTriangle, History, Fingerprint, ExternalLink, RefreshCcw, Camera, FileBadge2 } from 'lucide-react';
 import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase/clientApp";
 import { useAuth } from "@/components/AuthProvider";
 import UploadZone from '@/components/Identity/UploadZone';
 import RiskReport from '@/components/Identity/RiskReport';
+import LiveDetectionPanel from '@/components/Identity/LiveDetectionPanel';
 import { analyzeIdentity } from '@/app/actions/verify-identity';
+
+type IdentityResult = {
+  success?: boolean;
+  verdict?: string;
+  trustScore?: number;
+  message?: string;
+  [key: string]: unknown;
+};
+
+type HistoryItem = {
+  id: string;
+  imageUrl?: string;
+  fileName?: string;
+  verdict?: string;
+  trustScore?: number;
+  reasoning?: string;
+  category?: string;
+  timestamp?: {
+    toDate: () => Date;
+  };
+};
 
 export default function IdentityGuardPage() {
   const { user } = useAuth();
-  const [results, setResults] = useState<any>(null);
-  const [history, setHistory] = useState<any[]>([]);
+  const [results, setResults] = useState<IdentityResult | null>(null);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState("");
+  const [activeTab, setActiveTab] = useState<"artifacts" | "realtime">("artifacts");
 
   const fetchHistory = useCallback(async () => {
     if (!user?.uid) return;
@@ -27,7 +50,7 @@ export default function IdentityGuardPage() {
         limit(5)
       );
       const snap = await getDocs(q);
-      setHistory(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setHistory(snap.docs.map(doc => ({ id: doc.id, ...(doc.data() as Omit<HistoryItem, "id">) })));
     } catch (err) {
       console.error("History fetch error:", err);
     }
@@ -119,66 +142,184 @@ export default function IdentityGuardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-8">
-        <div className="col-span-12 lg:col-span-5 flex flex-col">
-          <h2 className="text-lg font-bold flex items-center gap-2 italic mb-8">
-            <Lock size={18} className="text-blue-500" /> Verification Inputs
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
-            <UploadZone title="Identity Document" onUpload={handleUpload} />
-            <UploadZone title="Biometric Selfie" onUpload={handleUpload} />
-          </div>
-        </div>
-
-        {/* 🧪 UPDATED FORENSIC REPORT COLUMN WITH PROGRESS BAR */}
-        <div className="col-span-12 lg:col-span-7 flex flex-col">
-          <h2 className="text-lg font-bold mb-8 flex items-center gap-2 italic">
-            <Activity size={18} className="text-blue-500" /> Forensic Report
-          </h2>
-
-          {loading ? (
-            <div className="bg-[#1e293b]/10 border border-slate-800 rounded-3xl p-20 flex flex-col items-center justify-center backdrop-blur-md animate-in fade-in duration-500 flex-1">
-              {/* 🚀 Sleek Futuristic Progress Bar */}
-              <div className="w-full max-w-xs bg-slate-900/50 h-1.5 rounded-full overflow-hidden mb-6 border border-slate-800">
-                <div
-                  className="h-full bg-blue-500 transition-all duration-700 ease-out shadow-[0_0_15px_rgba(59,130,246,0.6)]"
-                  style={{ width: `${progress}%` }}
-                />
+      <div className="mb-8 rounded-[30px] border border-slate-800 bg-[#071120]/80 p-3 backdrop-blur-xl shadow-[0_24px_70px_rgba(2,6,23,0.4)]">
+        <div className="grid gap-3 md:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab("artifacts")}
+            className={`rounded-[24px] border px-5 py-5 text-left transition-all ${
+              activeTab === "artifacts"
+                ? "border-blue-400/30 bg-[linear-gradient(135deg,rgba(59,130,246,0.22),rgba(15,23,42,0.92))] shadow-[0_18px_40px_rgba(59,130,246,0.18)]"
+                : "border-slate-800 bg-slate-950/30 hover:border-slate-700 hover:bg-slate-900/40"
+            }`}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.32em] text-slate-500">
+                  Tab 01
+                </p>
+                <h2 className="mt-2 flex items-center gap-2 text-lg font-black text-white">
+                  <FileBadge2 size={18} className="text-blue-400" />
+                  Document + selfie verify
+                </h2>
+                <p className="mt-2 max-w-lg text-sm leading-6 text-slate-400">
+                  Keep your existing upload flow for certificate documents and biometric
+                  photos with the forensic report on the right.
+                </p>
               </div>
+              <span className="rounded-full border border-blue-400/20 bg-blue-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.28em] text-blue-300">
+                Static Verify
+              </span>
+            </div>
+          </button>
 
-              <div className="flex items-center gap-3">
-                <RefreshCcw size={14} className="text-blue-400 animate-spin" />
-                <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">
-                  {status} <span className="text-blue-500 ml-1">{progress}%</span>
-                </span>
+          <button
+            type="button"
+            onClick={() => setActiveTab("realtime")}
+            className={`rounded-[24px] border px-5 py-5 text-left transition-all ${
+              activeTab === "realtime"
+                ? "border-cyan-400/30 bg-[linear-gradient(135deg,rgba(34,211,238,0.18),rgba(15,23,42,0.92))] shadow-[0_18px_40px_rgba(34,211,238,0.14)]"
+                : "border-slate-800 bg-slate-950/30 hover:border-slate-700 hover:bg-slate-900/40"
+            }`}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.32em] text-slate-500">
+                  Tab 02
+                </p>
+                <h2 className="mt-2 flex items-center gap-2 text-lg font-black text-white">
+                  <Camera size={18} className="text-cyan-300" />
+                  Realtime deepfake detect
+                </h2>
+                <p className="mt-2 max-w-lg text-sm leading-6 text-slate-400">
+                  Turn on the webcam for a live identity radar, then capture a frame and
+                  send it to the same AI scan pipeline.
+                </p>
               </div>
-              <p className="text-[9px] text-slate-500 mt-8 font-mono uppercase tracking-tighter">
-                Establishing Secure WebSocket... Gemini-3 Node Ready
-              </p>
+              <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.28em] text-cyan-200">
+                Real time
+              </span>
             </div>
-          ) : results && results.success === false ? (
-            <div className="bg-orange-500/5 border border-orange-500/20 rounded-3xl p-12 flex flex-col items-center justify-center text-center backdrop-blur-md animate-in fade-in zoom-in duration-300 flex-1">
-              <AlertTriangle className="mx-auto mb-4 text-orange-500" size={48} />
-              <h3 className="text-xl font-black text-white uppercase tracking-tighter">
-                Forensic Engine: <span className="text-orange-500">No Function</span>
-              </h3>
-              <p className="text-slate-500 text-sm mt-2 max-w-xs mx-auto italic leading-relaxed">
-                {results.message || "The AI model is currently unreachable. Check your daily quota."}
-              </p>
-              <button
-                onClick={() => setResults(null)}
-                className="mt-8 flex items-center gap-2 mx-auto bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/30 px-6 py-2.5 rounded-xl text-[10px] font-bold tracking-widest uppercase transition-all active:scale-95"
-              >
-                <RefreshCcw size={14} /> Retry Forensic Link
-              </button>
-            </div>
-          ) : (
-            <div className="flex-1 flex flex-col h-full">
-              <RiskReport results={results} loading={loading} />
-            </div>
-          )}
+          </button>
         </div>
       </div>
+
+      {activeTab === "artifacts" ? (
+        <div className="grid grid-cols-12 gap-8">
+          <div className="col-span-12 lg:col-span-5 flex flex-col">
+            <h2 className="text-lg font-bold flex items-center gap-2 italic mb-8">
+              <Lock size={18} className="text-blue-500" /> Verification Inputs
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+              <UploadZone title="Identity Document" onUpload={handleUpload} />
+              <UploadZone title="Biometric Selfie" onUpload={handleUpload} />
+            </div>
+          </div>
+
+          <div className="col-span-12 lg:col-span-7 flex flex-col">
+            <h2 className="text-lg font-bold mb-8 flex items-center gap-2 italic">
+              <Activity size={18} className="text-blue-500" /> Forensic Report
+            </h2>
+
+            {loading ? (
+              <div className="bg-[#1e293b]/10 border border-slate-800 rounded-3xl p-20 flex flex-col items-center justify-center backdrop-blur-md animate-in fade-in duration-500 flex-1">
+                <div className="w-full max-w-xs bg-slate-900/50 h-1.5 rounded-full overflow-hidden mb-6 border border-slate-800">
+                  <div
+                    className="h-full bg-blue-500 transition-all duration-700 ease-out shadow-[0_0_15px_rgba(59,130,246,0.6)]"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <RefreshCcw size={14} className="text-blue-400 animate-spin" />
+                  <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">
+                    {status} <span className="text-blue-500 ml-1">{progress}%</span>
+                  </span>
+                </div>
+                <p className="text-[9px] text-slate-500 mt-8 font-mono uppercase tracking-tighter">
+                  Establishing Secure WebSocket... Gemini-3 Node Ready
+                </p>
+              </div>
+            ) : results && results.success === false ? (
+              <div className="bg-orange-500/5 border border-orange-500/20 rounded-3xl p-12 flex flex-col items-center justify-center text-center backdrop-blur-md animate-in fade-in zoom-in duration-300 flex-1">
+                <AlertTriangle className="mx-auto mb-4 text-orange-500" size={48} />
+                <h3 className="text-xl font-black text-white uppercase tracking-tighter">
+                  Forensic Engine: <span className="text-orange-500">No Function</span>
+                </h3>
+                <p className="text-slate-500 text-sm mt-2 max-w-xs mx-auto italic leading-relaxed">
+                  {results.message || "The AI model is currently unreachable. Check your daily quota."}
+                </p>
+                <button
+                  onClick={() => setResults(null)}
+                  className="mt-8 flex items-center gap-2 mx-auto bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/30 px-6 py-2.5 rounded-xl text-[10px] font-bold tracking-widest uppercase transition-all active:scale-95"
+                >
+                  <RefreshCcw size={14} /> Retry Forensic Link
+                </button>
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col h-full">
+                <RiskReport results={results} loading={loading} />
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          <LiveDetectionPanel onCapture={handleUpload} loading={loading} />
+
+          <div className="rounded-[30px] border border-slate-800 bg-[#071120]/70 p-6 backdrop-blur-xl">
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
+                  Captured Frame Analysis
+                </p>
+                <h2 className="mt-2 flex items-center gap-2 text-lg font-black text-white">
+                  <Activity size={18} className="text-cyan-300" /> AI forensic report
+                </h2>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="bg-[#1e293b]/10 border border-slate-800 rounded-3xl p-20 flex flex-col items-center justify-center backdrop-blur-md animate-in fade-in duration-500">
+                <div className="w-full max-w-xs bg-slate-900/50 h-1.5 rounded-full overflow-hidden mb-6 border border-slate-800">
+                  <div
+                    className="h-full bg-cyan-400 transition-all duration-700 ease-out shadow-[0_0_15px_rgba(34,211,238,0.55)]"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <RefreshCcw size={14} className="text-cyan-300 animate-spin" />
+                  <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">
+                    {status} <span className="text-cyan-300 ml-1">{progress}%</span>
+                  </span>
+                </div>
+                <p className="text-[9px] text-slate-500 mt-8 font-mono uppercase tracking-tighter">
+                  Streaming captured frame into forensic engine...
+                </p>
+              </div>
+            ) : results && results.success === false ? (
+              <div className="bg-orange-500/5 border border-orange-500/20 rounded-3xl p-12 flex flex-col items-center justify-center text-center backdrop-blur-md animate-in fade-in zoom-in duration-300">
+                <AlertTriangle className="mx-auto mb-4 text-orange-500" size={48} />
+                <h3 className="text-xl font-black text-white uppercase tracking-tighter">
+                  Realtime Scanner: <span className="text-orange-500">Analysis Unavailable</span>
+                </h3>
+                <p className="text-slate-500 text-sm mt-2 max-w-xs mx-auto italic leading-relaxed">
+                  {results.message || "The AI model is currently unreachable. Check your daily quota."}
+                </p>
+                <button
+                  onClick={() => setResults(null)}
+                  className="mt-8 flex items-center gap-2 mx-auto bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/30 px-6 py-2.5 rounded-xl text-[10px] font-bold tracking-widest uppercase transition-all active:scale-95"
+                >
+                  <RefreshCcw size={14} /> Reset scanner
+                </button>
+              </div>
+            ) : (
+              <RiskReport results={results} loading={loading} />
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 📜 ENHANCED AUDIT LOG REGISTRY */}
       <div className="mt-12 bg-[#1e293b]/10 border border-slate-800 rounded-3xl overflow-hidden backdrop-blur-sm">
@@ -202,7 +343,11 @@ export default function IdentityGuardPage() {
             <tbody className="divide-y divide-slate-800/50 text-slate-400">
               {history.length > 0 ? (
                 history.map((log) => (
-                  <tr key={log.id} className="hover:bg-blue-500/5 transition-colors group">
+                  (() => {
+                    const trustScore = log.trustScore ?? 0;
+
+                    return (
+                      <tr key={log.id} className="hover:bg-blue-500/5 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <a
@@ -211,10 +356,10 @@ export default function IdentityGuardPage() {
                           rel="noreferrer"
                           className="h-10 w-10 bg-slate-800 rounded-lg flex items-center justify-center border border-slate-700 hover:border-blue-500/50 overflow-hidden transition-all group/img relative"
                         >
-                          {log.imageUrl ? (
-                            <>
-                              <img src={log.imageUrl} alt="Scan" className="h-full w-full object-cover opacity-60 group-hover/img:opacity-100 transition-opacity" />
-                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 bg-black/40 transition-opacity">
+                        {log.imageUrl ? (
+                          <>
+                            <img src={log.imageUrl} alt="Scan" className="h-full w-full object-cover opacity-60 group-hover/img:opacity-100 transition-opacity" />
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 bg-black/40 transition-opacity">
                                 <ExternalLink size={12} className="text-white" />
                               </div>
                             </>
@@ -241,7 +386,7 @@ export default function IdentityGuardPage() {
 
                     <td className="px-6 py-4 max-w-xs lg:max-w-md">
                       <p className="italic leading-relaxed text-slate-500 group-hover:text-slate-400 transition-colors line-clamp-2">
-                        "{log.reasoning || "Forensic metadata logged successfully."}"
+                        &ldquo;{log.reasoning || "Forensic metadata logged successfully."}&rdquo;
                       </p>
                     </td>
 
@@ -257,12 +402,14 @@ export default function IdentityGuardPage() {
                     </td>
 
                     <td className="px-6 py-4 text-right">
-                      <span className={`text-sm font-black italic tracking-tighter ${log.trustScore > 70 ? 'text-blue-400' : 'text-rose-400'
+                      <span className={`text-sm font-black italic tracking-tighter ${trustScore > 70 ? 'text-blue-400' : 'text-rose-400'
                         }`}>
-                        {log.trustScore}%
+                        {trustScore}%
                       </span>
                     </td>
-                  </tr>
+                      </tr>
+                    );
+                  })()
                 ))
               ) : (
                 <tr>
