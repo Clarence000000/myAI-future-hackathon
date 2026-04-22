@@ -1,13 +1,31 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { Shield, Lock, Share2, User, CreditCard, LogOut } from 'lucide-react';
 import { useAuth } from "@/components/AuthProvider";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
+  const router = useRouter();
+  const { user, loading, signOut } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/');
+    }
+  }, [user, loading, router]);
+
+  if (loading || !user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#020617]">
+        <div className="animate-pulse text-blue-500 font-bold tracking-widest uppercase text-sm">
+          Verifying Credentials...
+        </div>
+      </div>
+    );
+  }
 
   const navItems = [
     { name: 'ScamShield', href: '/dashboard/scam-shield', icon: <Shield size={18} /> },

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { auth } from "@/lib/firebase/clientApp";
 import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -11,13 +13,20 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.push('/dashboard/identity-guard');
+    }
+  }, [user, loading, router]);
 
   const handleGoogleSignIn = async () => {
     try {
       setError("");
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      router.push("/dashboard");
+      router.push("/dashboard/identity-guard");
     } catch (err: any) {
       setError(err.message || "Failed to sign in with Google.");
     }
@@ -32,7 +41,7 @@ export default function LoginPage() {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
-      router.push("/dashboard");
+      router.push("/dashboard/identity-guard");
     } catch (err: any) {
       setError(err.message || "Authentication failed.");
     }

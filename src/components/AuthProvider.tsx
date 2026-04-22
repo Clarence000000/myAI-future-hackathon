@@ -25,6 +25,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
+  // Broadcast token to the extension so it automatically logs in
+  useEffect(() => {
+    if (!user) return;
+    
+    let isMounted = true;
+    const broadcastToken = async () => {
+      try {
+        const token = await user.getIdToken();
+        if (isMounted) {
+          window.postMessage({ type: 'SCAMSHIELD_AUTH', token }, '*');
+        }
+      } catch (e) {
+        console.error("Failed to broadcast token", e);
+      }
+    };
+
+    broadcastToken();
+    // Send it a few times in case the extension content script loads slowly
+    const intervalId = setInterval(broadcastToken, 3000);
+    
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, [user]);
+
   const signOut = () => firebaseSignOut(auth);
 
   return (

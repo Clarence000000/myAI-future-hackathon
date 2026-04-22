@@ -4,12 +4,19 @@ import { useRouter } from 'next/navigation';
 import { Shield, Lock, Mail, ArrowRight, EyeOff, Activity } from 'lucide-react';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '@/lib/firebase/clientApp'; // Adjust path if needed
-import { AuthProvider } from '@/components/AuthProvider';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function HomePage() {
   const router = useRouter(); 
+  const { user, loading } = useAuth();
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   
+  useEffect(() => {
+    if (!loading && user) {
+      router.push('/dashboard/identity-guard');
+    }
+  }, [user, loading, router]);
+
   const leftPupilRef = useRef<HTMLDivElement>(null);
   const rightPupilRef = useRef<HTMLDivElement>(null);
 

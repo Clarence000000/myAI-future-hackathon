@@ -136,7 +136,7 @@ function PopupApp() {
   }, []);
 
   const handleSignIn = useCallback(async () => {
-    chrome.tabs.create({ url: `${__API_BASE_URL__}/login` });
+    chrome.tabs.create({ url: `${__API_BASE_URL__}/` });
     try { window.close(); } catch {}
   }, []);
 
