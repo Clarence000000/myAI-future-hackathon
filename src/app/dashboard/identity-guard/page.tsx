@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from 'react';
-import { Activity, Lock, AlertTriangle, History, Fingerprint, ExternalLink, RefreshCcw, Camera, FileBadge2 } from 'lucide-react';
-import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
+import { Activity, Lock, AlertTriangle, History, Fingerprint, ExternalLink, RefreshCcw, Camera, FileBadge2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase/clientApp";
 import { useAuth } from "@/components/AuthProvider";
@@ -39,6 +39,8 @@ export default function IdentityGuardPage() {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState("");
   const [activeTab, setActiveTab] = useState<"artifacts" | "realtime">("artifacts");
+  const [historyPage, setHistoryPage] = useState(1);
+  const historyPageSize = 8;
 
   const fetchHistory = useCallback(async () => {
     if (!user?.uid) return;
@@ -46,8 +48,7 @@ export default function IdentityGuardPage() {
       const q = query(
         collection(db, "identityLogs"),
         where("userId", "==", user.uid),
-        orderBy("timestamp", "desc"),
-        limit(5)
+        orderBy("timestamp", "desc")
       );
       const snap = await getDocs(q);
       setHistory(snap.docs.map(doc => ({ id: doc.id, ...(doc.data() as Omit<HistoryItem, "id">) })));
@@ -59,6 +60,10 @@ export default function IdentityGuardPage() {
   useEffect(() => {
     fetchHistory();
   }, [fetchHistory, results]);
+
+  useEffect(() => {
+    setHistoryPage(1);
+  }, [history.length]);
 
   const handleUpload = async (file: File) => {
     if (!user?.uid) return alert("Please ensure you are logged in.");
@@ -112,6 +117,11 @@ export default function IdentityGuardPage() {
 
   const isSecure = results?.verdict === "REAL" || !results || results?.success === false;
   const displayScore = results?.success !== false ? (results?.trustScore ?? '--') : 'ERR';
+  const totalHistoryPages = Math.max(1, Math.ceil(history.length / historyPageSize));
+  const paginatedHistory = history.slice(
+    (historyPage - 1) * historyPageSize,
+    historyPage * historyPageSize
+  );
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 p-8 custom-scrollbar">
@@ -327,7 +337,12 @@ export default function IdentityGuardPage() {
           <h2 className="text-sm font-bold text-white uppercase tracking-widest flex items-center gap-2">
             <History size={16} className="text-blue-500" /> Forensic Audit Registry
           </h2>
-          <span className="text-[9px] text-slate-500 font-mono uppercase tracking-widest">Linked Artifacts Enabled</span>
+          <div className="text-right">
+            <span className="block text-[9px] text-slate-500 font-mono uppercase tracking-widest">Linked Artifacts Enabled</span>
+            <span className="block mt-1 text-[10px] text-slate-400 font-semibold">
+              {history.length} total records
+            </span>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -341,8 +356,8 @@ export default function IdentityGuardPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/50 text-slate-400">
-              {history.length > 0 ? (
-                history.map((log) => (
+              {paginatedHistory.length > 0 ? (
+                paginatedHistory.map((log) => (
                   (() => {
                     const trustScore = log.trustScore ?? 0;
 
@@ -422,6 +437,41 @@ export default function IdentityGuardPage() {
             </tbody>
           </table>
         </div>
+
+        {history.length > historyPageSize && (
+          <div className="flex flex-col gap-3 border-t border-slate-800 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
+              Showing {(historyPage - 1) * historyPageSize + 1}-
+              {Math.min(historyPage * historyPageSize, history.length)} of {history.length}
+            </p>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setHistoryPage((page) => Math.max(1, page - 1))}
+                disabled={historyPage === 1}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/50 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-300 transition hover:border-slate-600 hover:bg-slate-800/70 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronLeft size={14} />
+                Prev
+              </button>
+
+              <span className="px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                Page {historyPage} / {totalHistoryPages}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setHistoryPage((page) => Math.min(totalHistoryPages, page + 1))}
+                disabled={historyPage === totalHistoryPages}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/50 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-300 transition hover:border-slate-600 hover:bg-slate-800/70 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
