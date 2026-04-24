@@ -9,7 +9,7 @@
 ![Gemini](https://img.shields.io/badge/Gemini-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white)
 ![Google AI Studio](https://img.shields.io/badge/Google_AI_Studio-4285F4?style=for-the-badge&logo=google&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![Antigravity](https://img.shields.io/badge/Antigravity-000000?style=for-the-badge&logo=spacex&logoColor=white)
+![Antigravity](https://img.shields.io/badge/Antigravity-4285F4?style=for-the-badge&logo=google&logoColor=white)
 
 **FinTrust AI** is a centralized fintech security ecosystem designed to provide multi-layered protection against digital fraud. By leveraging the **Google AI Ecosystem Stack**, the platform transitions from simple scam detection to autonomous security intelligence, specifically tailored for the Malaysian and Southeast Asian financial landscape.
 
