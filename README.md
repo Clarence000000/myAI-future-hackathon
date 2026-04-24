@@ -15,6 +15,22 @@
 
 ## 🏗️ Architectural Overview
 
+FinTrust AI is a modular intelligence hub that aggregates data from specialized security modules into a unified **Insight Dashboard**, providing a "Single Source of Truth" for fintech security.
+
+### Core Modules
+
+1.  **ScamShield AI (NLP Reasoning):** Uses Gemini 2.0 to detect scam intent in text/URLs and identifies "Quishing" (QR scams).
+2.  **IdentityGuard AI (Vision Intelligence):** A digital risk analyzer using Gemini Vision for face verification and document authenticity analysis to prevent deepfakes and identity theft.
+3.  **FraudTransaction (Pattern Analysis):** Uses AI to detect fraudulent transaction patterns and flag high-risk anomalies in real-time.
+
+## 🛠️ The "Build With AI" Tech Stack
+
+*   **Frontend:** Next.js (App Router), TypeScript, Tailwind CSS.
+*   **Backend:** Firebase Firestore (Storage), Firebase Auth (Security), Next.js API Routes (Logic).
+*   **AI Layer:** Google Gemini 2.0 (NLP Reasoning, Vision Intelligence, and AI Summarization).
+*   **Chrome Extension:** Real-time web protection using Manifest V3 and Shadow DOM.
+*   **Deployment:** Fully containerized and deployed on Google Cloud Run.
+
 ```mermaid
 graph TD
     subgraph ClientLayer [Client Layer]
@@ -57,22 +73,6 @@ graph TD
     Web --> Auth
     Ext --> Auth
 ```
-
-FinTrust AI is a modular intelligence hub that aggregates data from specialized security modules into a unified **Insight Dashboard**, providing a "Single Source of Truth" for fintech security.
-
-### Core Modules
-
-1.  **ScamShield AI (NLP Reasoning):** Uses Gemini 2.0 to detect scam intent in text/URLs and identifies "Quishing" (QR scams).
-2.  **IdentityGuard AI (Vision Intelligence):** A digital risk analyzer using Gemini Vision for face verification and document authenticity analysis to prevent deepfakes and identity theft.
-3.  **FraudTransaction (Pattern Analysis):** Uses AI to detect fraudulent transaction patterns and flag high-risk anomalies in real-time.
-
-## 🛠️ The "Build With AI" Tech Stack
-
-*   **Frontend:** Next.js (App Router), TypeScript, Tailwind CSS.
-*   **Backend:** Firebase Firestore (Storage), Firebase Auth (Security), Next.js API Routes (Logic).
-*   **AI Layer:** Google Gemini 2.0 (NLP Reasoning, Vision Intelligence, and AI Summarization).
-*   **Chrome Extension:** Real-time web protection using Manifest V3 and Shadow DOM.
-*   **Deployment:** Fully containerized and deployed on Google Cloud Run.
 
 ## 🚀 Key Features
 
