@@ -84,7 +84,7 @@ graph TD
 
 ### 2. IdentityGuard AI
 *   **Deepfake Detection:** Analyze facial frames to calculate liveness and synthetic probability.
-*   **Document Verification:** Automated authenticity analysis for ID documents.
+*   **Document Verification:** Automated authenticity analysis for ID documents and Identity Card.
 *   **Forensic Registry:** Detailed audit logs for every identity verification attempt.
 
 ### 3. FraudTransaction Monitoring
